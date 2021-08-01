@@ -19,4 +19,12 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Vector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Vector.impl.h">
+      <Filter>Source Files</Filter>
+    </ClInclude>
+  </ItemGroup>
 </Project>
