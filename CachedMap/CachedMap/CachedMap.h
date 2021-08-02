@@ -7,16 +7,16 @@
 #include <stdexcept>
 #include <limits>
 
-template <typename key_type, typename value_type,
-    template <typename key_storage_type, typename value_storage_type> typename storage_type>
+template <typename key_t, typename value_t,
+    template <typename key_storage_t, typename value_storage_t> typename storage_t>
 class cached_map {
 public:
-    using element_type = std::pair< const key_type, value_type>;
+    using element_t = std::pair< const key_t, value_t>;
 
     class iterator {
     public:
         iterator(cached_map* map) : cache(map) {}
-        iterator(const key_type& key, cached_map* map) : key_ptr(std::make_unique<key_type>(key)), cache(map) {}
+        iterator(const key_t& key, cached_map* map) : key_ptr(std::make_unique<key_t>(key)), cache(map) {}
 
         /// <summary>
         /// Gets the iterator pointing to the next record in storage container.
@@ -28,7 +28,7 @@ public:
             auto [next_key_defined, next_key] = cache->storage_.next_key(curr_key);
             if (next_key_defined)
             {
-                key_ptr = std::make_unique<key_type>(next_key);
+                key_ptr = std::make_unique<key_t>(next_key);
             }
             else
             {
@@ -42,10 +42,10 @@ public:
         /// Throws an exception if the iterator can not be dereferenced.
         /// </summary>
         /// <returns></returns>
-        element_type& operator*()
+        element_t& operator*()
         {
             if (key_ptr == nullptr) throw std::runtime_error("Trying to dereference nullptr");
-            key_type key = *key_ptr.get();
+            key_t key = *key_ptr.get();
             if (cache->is_cached(key))
             {
                 cache->update_key_timestamp(key);
@@ -60,7 +60,7 @@ public:
                 size_t value_size = value.size();
                 if (value_size > cache->capacity_) throw std::runtime_error("Value size is bigger than cache capacity");
 
-                element_type keyvalue = std::make_pair(key, value);
+                element_t keyvalue = std::make_pair(key, value);
                 cache->insert_to_cache(key, keyvalue, value_size);
             }
             auto keyvalue_ptr = (cache->elements_[key].second).get();
@@ -74,7 +74,7 @@ public:
         /// <summary>
         /// The value is nullptr for end iterator.
         /// </summary>
-        std::unique_ptr<key_type> key_ptr;
+        std::unique_ptr<key_t> key_ptr;
 
         /// <summary>
         /// Pointer to cached map that allows access to both cache and external storage.
@@ -115,7 +115,7 @@ public:
     /// <param name="keyvalue"></param>
     /// <returns>Pair of iterator and bool value from which can be deduced
     /// whether the insertion took place or not.</returns>
-    std::pair<iterator, bool> insert(const element_type& keyvalue)
+    std::pair<iterator, bool> insert(const element_t& keyvalue)
     {
         auto& [key, value] = keyvalue;
         auto key_exists = storage_.present(key);
@@ -139,7 +139,7 @@ public:
     /// <param name="keyvalue"></param>
     /// <returns>Pair of iterator and bool value from which can be deduced
     /// whether the insertion took place or not.</returns>
-    std::pair<iterator, bool> insert_or_assign(const element_type& keyvalue)
+    std::pair<iterator, bool> insert_or_assign(const element_t& keyvalue)
     {
         auto& [key, value] = keyvalue;
         auto key_exists = storage_.present(key);
@@ -163,7 +163,7 @@ public:
     /// <param name="key"></param>
     /// <returns>Iterator attached to the requested key.
     /// Returns end iterator if key is not present in the storage.</returns>
-    iterator find(const key_type& key)
+    iterator find(const key_t& key)
     {
         if (storage_.present(key))
         {
@@ -172,14 +172,14 @@ public:
         return end();
     }
 private:
-    using element_type_ptr = std::unique_ptr<element_type>;
+    using element_type_ptr = std::unique_ptr<element_t>;
     using key_timestamp = size_t;
-    using key_element_type = std::pair<key_timestamp, element_type_ptr>;
+    using key_element_t = std::pair<key_timestamp, element_type_ptr>;
 
     /// <summary>
     /// External storage reference.
     /// </summary>
-    storage_type< key_type, value_type> storage_;
+    storage_t< key_t, value_t> storage_;
 
     /// <summary>
     /// Cache total capacity.
@@ -200,15 +200,15 @@ private:
     /// Container of cached keys with values.
     /// Key timestamps are stored inside element_type.
     /// </summary>
-    std::map < key_type, key_element_type> elements_;
+    std::map < key_t, key_element_t> elements_;
 
     /// <summary>
     /// Keys stored by their insertion / update order.
     /// Oldest key can be found at the first position.
     /// </summary>
-    std::map<key_timestamp, key_type> keys_from_oldest_;
+    std::map<key_timestamp, key_t> keys_from_oldest_;
 
-    bool is_cached(const key_type& key)
+    bool is_cached(const key_t& key)
     {
         return elements_.find(key) != elements_.end();
     }
@@ -223,7 +223,7 @@ private:
     {
         if (value_overflow(max_key_timestamp_))
         {
-            std::map<key_timestamp, key_type> refractored_timestamps;
+            std::map<key_timestamp, key_t> refractored_timestamps;
             max_key_timestamp_ = 0;
             for (auto it = keys_from_oldest_.begin(); it != keys_from_oldest_.end(); ++it)
             {
@@ -243,7 +243,7 @@ private:
     /// Updates given key as the newest cache record.
     /// </summary>
     /// <param name="key"></param>
-    void update_key_timestamp(const key_type& key)
+    void update_key_timestamp(const key_t& key)
     {
         auto& element = *elements_.find(key);
         auto& curr_timestamp = element.second.first;
@@ -263,7 +263,7 @@ private:
     /// <param name="key"></param>
     /// <param name="keyvalue">Pair of key and value for insertion to the cache container</param>
     /// <param name="value_size">Size of value placed in keyvalue</param>
-    void insert_to_cache(const key_type& key, const element_type& keyvalue, size_t value_size)
+    void insert_to_cache(const key_t& key, const element_t& keyvalue, size_t value_size)
     {
         if (value_size <= capacity_)
         {
@@ -277,7 +277,7 @@ private:
             size_ += value_size;
 
             keys_from_oldest_.insert({ max_key_timestamp_, key });
-            elements_.insert(std::make_pair(key, key_element_type(max_key_timestamp_, std::make_unique<element_type>(keyvalue))));
+            elements_.insert(std::make_pair(key, key_element_t(max_key_timestamp_, std::make_unique<element_t>(keyvalue))));
         }
     }
 
@@ -289,7 +289,7 @@ private:
     /// <param name="key"></param>
     /// <param name="value"></param>
     /// <param name="keyvalue">Updated pair of key and value to value assignment</param>
-    void assign_new_value(const key_type& key, const value_type& value, const element_type& keyvalue)
+    void assign_new_value(const key_t& key, const value_t& value, const element_t& keyvalue)
     {
         auto value_size = value.size();
         if (is_cached(key))
@@ -300,7 +300,7 @@ private:
             }
             else
             {
-                key_element_type& curr_element = elements_[key];
+                key_element_t& curr_element = elements_[key];
                 element_type_ptr& curr_value_ptr = curr_element.second;
                 size_t old_value_size = (*curr_value_ptr.get()).second.size();
                 size_ = size_ - old_value_size + value_size;
@@ -309,7 +309,7 @@ private:
                 {
                     delete_old_elements(size_ - capacity_);
                 }
-                curr_value_ptr = std::make_unique<element_type>(keyvalue);
+                curr_value_ptr = std::make_unique<element_t>(keyvalue);
             }
         }
         else
@@ -330,7 +330,7 @@ private:
             auto oldest_key_order_it = keys_from_oldest_.begin();
             auto oldest_key = (*oldest_key_order_it).second;
             auto oldest_key_it = elements_.find(oldest_key);
-            key_element_type& element = (*oldest_key_it).second;
+            key_element_t& element = (*oldest_key_it).second;
 
             auto& [key, value] = *(element.second.get());
             auto value_size = value.size();
