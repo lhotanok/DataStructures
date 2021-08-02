@@ -77,6 +77,12 @@ item& vector<item>::operator [] (size_t pos)
 }
 
 template<typename item>
+const item& vector<item>::operator [] (size_t pos) const
+{
+    return arr_m[pos];
+}
+
+template<typename item>
 void vector<item>::print() const
 {
     for (size_t i = 0; i < size_m; i++)

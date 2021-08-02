@@ -22,6 +22,7 @@ public:
     void push_back(item value);
 
     item& operator [] (size_t pos);
+    const item& operator [] (size_t pos) const;
 
     void print() const;
 };

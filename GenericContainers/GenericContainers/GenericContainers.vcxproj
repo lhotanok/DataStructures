@@ -141,9 +141,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="GenericContainers.cpp" />
+    <ClCompile Include="Tests_pair.cpp" />
+    <ClCompile Include="Tests_vector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Pair.h" />
+    <ClInclude Include="Tests_pair.h" />
+    <ClInclude Include="Tests_vector.h" />
     <ClInclude Include="Vector.h" />
     <ClInclude Include="Vector.impl.h" />
   </ItemGroup>
